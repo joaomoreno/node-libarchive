@@ -1,0 +1,3 @@
+[submodule "libarchive"]
+	path = libarchive
+	url = https://github.com/libarchive/libarchive
