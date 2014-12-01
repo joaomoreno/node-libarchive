@@ -7,6 +7,9 @@
         ["OS == 'mac'", {
           "include_dirs": [
             "libarchive/libarchive"
+          ],
+          "libraries": [
+            "../libarchive/libarchive/libarchive.a"
           ]
         }]
       ]
