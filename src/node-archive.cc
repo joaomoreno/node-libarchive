@@ -84,13 +84,11 @@ void OnReadOpenFilenameData(uv_work_t *req) {
 	HandleScope scope;
 	
 	ReadOpenFilenameData *data = (ReadOpenFilenameData*) req->data;
-	Handle<Value> argv[] = {
-		Null(),
-		String::New(data->filename->c_str())
-	};
+	Handle<Value> err = data->result == ARCHIVE_OK ? Null() : Number::New(data->result);
 	
+	Handle<Value> argv[] = { err };
 	TryCatch tryCatch;
-	data->callback->Call(Context::GetCurrent()->Global(), 2, argv);
+	data->callback->Call(Context::GetCurrent()->Global(), 1, argv);
 	if (tryCatch.HasCaught()) {
 		node::FatalException(tryCatch);
 	}
