@@ -22,8 +22,8 @@ void Archive::Init(Handle<Object> exports) {
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 	
 	// Prototype
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("filename"), String::NewSymbol("unknown"));
-		
+//	tpl->PrototypeTemplate()->Set(String::NewSymbol("filename"), String::NewSymbol("unknown"));
+	
 	constructor = Persistent<Function>::New(tpl->GetFunction());
 	exports->Set(String::NewSymbol("open"), FunctionTemplate::New(Open)->GetFunction());
 }
@@ -34,9 +34,6 @@ Handle<Value> Archive::New(const Arguments& args) {
 	if (args.IsConstructCall()) {
 		OpenData* data = (OpenData*) External::Unwrap(args[0]);
 		Archive* obj = new Archive(data->archive);
-		
-		args.This()->Set(String::NewSymbol("filename"), String::NewSymbol(data->filename->c_str()));
-		
 		obj->Wrap(args.This());
 		return args.This();
 	} else {
