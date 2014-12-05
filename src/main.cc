@@ -31,8 +31,15 @@ using namespace v8;
 //	return scope.Close(String::New("world"));
 //}
 
+Handle<Value> OpenArchive(const Arguments& args) {
+	HandleScope scope;
+	return scope.Close(Archive::Open(args));
+}
+
 void InitAll(Handle<Object> exports) {
 	Archive::Init(exports);
+	
+	exports->Set(String::NewSymbol("open"), FunctionTemplate::New(OpenArchive)->GetFunction());
 }
 
 NODE_MODULE(hello, InitAll)
