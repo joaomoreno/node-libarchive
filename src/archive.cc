@@ -1,7 +1,7 @@
 #include <string>
 #include <node.h>
 #include <uv.h>
-#include "node-archive.h"
+#include "archive.h"
 
 using namespace v8;
 

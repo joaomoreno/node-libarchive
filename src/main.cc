@@ -1,6 +1,6 @@
 #include <node.h>
 #include <v8.h>
-#include "node-archive.h"
+#include "archive.h"
 //#include "archive.h"
 //#include "archive_entry.h"
 
