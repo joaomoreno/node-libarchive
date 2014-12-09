@@ -77,6 +77,11 @@ void OnWrite(uv_work_t *req) {
 
 	data->archive = NULL;
 	data->callback.Dispose();
+
+	if (NULL != data->symlink) {
+		delete data->symlink;
+	}
+
 	delete data->filename;
 	delete data;
 	delete req;
@@ -183,9 +188,53 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 	return scope.Close(Undefined());
 }
 
+void DoWriteSymlink(uv_work_t *req) {
+	WriteData *data = (WriteData*) req->data;
+
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, data->filename->c_str());
+	archive_entry_set_filetype(entry, AE_IFLNK);
+	archive_entry_set_perm(entry, data->permissions);
+	archive_entry_set_symlink(entry, data->symlink->c_str());
+
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, entry))) {
+		return;
+	}
+
+	data->result = ARCHIVE_OK;
+  archive_entry_free(entry);
+}
+
+// (filename, permissions, symlink, cb)
 Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 	HandleScope scope;
-	return scope.Close(Null());
+	
+	if (args.Length() != 4) {
+		ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
+		return scope.Close(Undefined());
+	}
+	
+	if (!args[0]->IsString() || !args[1]->IsNumber() || !args[2]->IsString() || !args[3]->IsFunction()) {
+		ThrowException(Exception::TypeError(String::New("Wrong arguments")));
+		return scope.Close(Undefined());
+	}
+	
+	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
+	uv_work_t *req = new uv_work_t();
+	WriteData *data = new WriteData();
+	
+	req->data = data;
+
+	data->archive = me->archive_;
+	data->filename = new std::string(*String::Utf8Value(args[0]));
+	data->permissions = args[1]->NumberValue();
+	data->symlink = new std::string(*String::Utf8Value(args[2]));
+	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
+	data->result = ARCHIVE_OK;
+	
+	uv_queue_work(uv_default_loop(), req, DoWriteSymlink, (uv_after_work_cb) OnWrite);
+	
+	return scope.Close(Undefined());
 }
 
 void DoClose(uv_work_t *req) {
