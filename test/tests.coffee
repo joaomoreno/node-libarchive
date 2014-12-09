@@ -5,7 +5,7 @@ async = require 'async'
 _ = require '../build/Release/archive'
 
 describe 'archive', ->
-	it 'should open an existing archive', (cb) ->
+	it 'should read an existing archive', (cb) ->
 		files = 0
 		directories = 0
 		symlinks = 0
@@ -22,6 +22,30 @@ describe 'archive', ->
 				assert.equal 1, directories
 				assert.equal 1, symlinks
 				cb()
+
+	it 'should provide the right properties', (cb) ->
+		_.read path.join(__dirname, 'fixtures', '1.zip'),
+			(entry) -> 
+				switch entry.type
+					when 'file'
+						assert entry.path
+						assert entry.permissions
+						assert entry.type
+						assert entry.data
+						assert !entry.symlink
+					when 'directory'
+						assert entry.path
+						assert entry.permissions
+						assert entry.type
+						assert !entry.data
+						assert !entry.symlink
+					when 'symlink'
+						assert entry.path
+						assert entry.permissions
+						assert entry.type
+						assert !entry.data
+						assert entry.symlink
+			cb
 
 	it 'should fail when opening a non existing archive', (cb) ->
 		_.read path.join(__dirname, 'fixtures', '-1.zip'),
