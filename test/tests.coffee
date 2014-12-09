@@ -20,17 +20,11 @@ describe 'archive', ->
 				assert.equal 1, directories
 				assert.equal 1, symlinks
 				cb()
-			
-	# it 'should err with a missing archive', (cb) ->
-	# 	_.open path.join(__dirname, 'fixtures', '__src-1.zip'), (err, archive) ->
-	# 		assert err
-	# 		assert !archive
-	# 		cb()
-			
-	# it 'should err with a missing archive', (cb) ->
-	# 	_.open path.join(__dirname, 'fixtures', 'src-1.zip'), (err, archive) ->
-	# 		count = 0
-			
-	# 		archive.read (-> count++), (err) ->
-	# 			assert !err
-	# 			assert.equal 3, count
+
+	it 'should fail when opening a non existing archive', (cb) ->
+		_.read path.join(__dirname, 'fixtures', '-1.zip'),
+			(entry) -> 
+				assert false
+			(err) ->
+				assert err
+				cb()
