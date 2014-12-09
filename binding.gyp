@@ -5,7 +5,6 @@
 			"sources": [
 				"src/main.cc",
 				"src/read.cc",
-				"src/write.cc",
 				"src/writer.cc"
 			],
 			"conditions": [
