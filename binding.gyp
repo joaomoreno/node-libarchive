@@ -3,7 +3,8 @@
 		{
 			"target_name": "archive",
 			"sources": [
-				"src/main.cc"
+				"src/main.cc",
+				"src/read.cc"
 			],
 			"conditions": [
 				["OS == 'mac'", {
