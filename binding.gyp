@@ -1,10 +1,9 @@
 {
 	"targets": [
 		{
-			"target_name": "hello",
+			"target_name": "archive",
 			"sources": [
-				"src/main.cc",
-				"src/node-archive.cc"
+				"src/main.cc"
 			],
 			"conditions": [
 				["OS == 'mac'", {

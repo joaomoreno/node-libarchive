@@ -1,5 +1,5 @@
 fs = require 'fs'
-_ = require '../build/Release/hello'
+_ = require '../build/Release/archive'
 
 exports.open = (name, cb) ->
 	fs.realpath name, (err, path) ->
