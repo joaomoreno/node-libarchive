@@ -9,15 +9,20 @@
 using namespace v8;
 using namespace node;
 
-typedef struct WriteFileData {
+typedef struct WriteData {
 	archive *archive;
 	std::string *filename;
 	mode_t permissions;
-	size_t bufferSize;
-	char *bufferData;
 	Persistent<Function> callback;
 	int result;
-} WriteFileData;
+
+	// files
+	size_t bufferSize;
+	char *bufferData;
+
+	// symlinks
+	std::string *symlink;
+} WriteData;
 
 typedef struct CloseData {
 	archive *archive;

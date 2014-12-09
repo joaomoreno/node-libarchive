@@ -59,8 +59,31 @@ Handle<Value> Writer::New(const Arguments& args) {
 	}
 }
 
+void OnWrite(uv_work_t *req) {
+	WriteData *data = (WriteData*) req->data;
+	
+	int argc = 1;
+	Handle<Value> argv[] = { Null() };
+
+	if (data->result != ARCHIVE_OK) {
+		argv[0] = Exception::Error(String::Concat(String::New("Could not write to archive: "), String::New(data->filename->c_str())));
+	}
+
+	TryCatch tryCatch;
+	data->callback->Call(Context::GetCurrent()->Global(), argc, argv);
+	if (tryCatch.HasCaught()) {
+		node::FatalException(tryCatch);
+	}
+
+	data->archive = NULL;
+	data->callback.Dispose();
+	delete data->filename;
+	delete data;
+	delete req;
+}
+
 void DoWriteFile(uv_work_t *req) {
-	WriteFileData *data = (WriteFileData*) req->data;
+	WriteData *data = (WriteData*) req->data;
 
 	archive_entry *entry = archive_entry_new();
 	archive_entry_set_pathname(entry, data->filename->c_str());
@@ -80,30 +103,7 @@ void DoWriteFile(uv_work_t *req) {
   archive_entry_free(entry);
 }
 
-void OnWriteFile(uv_work_t *req) {
-	WriteFileData *data = (WriteFileData*) req->data;
-	
-	int argc = 1;
-	Handle<Value> argv[] = { Null() };
-
-	if (data->result != ARCHIVE_OK) {
-		argv[0] = Exception::Error(String::Concat(String::New("Could not write file to archive: "), String::New(data->filename->c_str())));
-	}
-
-	TryCatch tryCatch;
-	data->callback->Call(Context::GetCurrent()->Global(), argc, argv);
-	if (tryCatch.HasCaught()) {
-		node::FatalException(tryCatch);
-	}
-
-	data->archive = NULL;
-	data->callback.Dispose();
-	delete data->filename;
-	delete data;
-	delete req;
-}
-
-// (filename, permissions, buffer)
+// (filename, permissions, buffer, cb)
 Handle<Value> Writer::WriteFile(const Arguments& args) {
 	HandleScope scope;
 	
@@ -119,7 +119,7 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 	
 	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
 	uv_work_t *req = new uv_work_t();
-	WriteFileData *data = new WriteFileData();
+	WriteData *data = new WriteData();
 	
 	req->data = data;
 
@@ -131,14 +131,56 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	
-	uv_queue_work(uv_default_loop(), req, DoWriteFile, (uv_after_work_cb) OnWriteFile);
+	uv_queue_work(uv_default_loop(), req, DoWriteFile, (uv_after_work_cb) OnWrite);
 	
 	return scope.Close(Undefined());
 }
 
+void DoWriteDirectory(uv_work_t *req) {
+	WriteData *data = (WriteData*) req->data;
+
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, data->filename->c_str());
+	archive_entry_set_filetype(entry, AE_IFDIR);
+	archive_entry_set_perm(entry, data->permissions);
+
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, entry))) {
+		return;
+	}
+
+	data->result = ARCHIVE_OK;
+  archive_entry_free(entry);
+}
+
+// (filename, permissions, cb)
 Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 	HandleScope scope;
-	return scope.Close(Null());
+	
+	if (args.Length() != 3) {
+		ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
+		return scope.Close(Undefined());
+	}
+	
+	if (!args[0]->IsString() || !args[1]->IsNumber() || !args[2]->IsFunction()) {
+		ThrowException(Exception::TypeError(String::New("Wrong arguments")));
+		return scope.Close(Undefined());
+	}
+	
+	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
+	uv_work_t *req = new uv_work_t();
+	WriteData *data = new WriteData();
+	
+	req->data = data;
+
+	data->archive = me->archive_;
+	data->filename = new std::string(*String::Utf8Value(args[0]));
+	data->permissions = args[1]->NumberValue();
+	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
+	data->result = ARCHIVE_OK;
+	
+	uv_queue_work(uv_default_loop(), req, DoWriteDirectory, (uv_after_work_cb) OnWrite);
+	
+	return scope.Close(Undefined());
 }
 
 Handle<Value> Writer::WriteSymlink(const Arguments& args) {

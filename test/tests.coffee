@@ -31,7 +31,9 @@ describe 'archive', ->
 
 	it 'should be able to write an archive', (cb) ->
 		w = new _.Writer path.join(__dirname, 'fixtures', 'out.zip')
-		w.writeFile 'hello.txt', 436, new Buffer('hello there\n', 'utf8'), (err) ->
-			# console.log w.close
-			w.close cb
+		w.writeDirectory 'folder', 493, (err) ->
+			return cb err if err
+			w.writeFile 'folder/hello.txt', 436, new Buffer('hello there\n', 'utf8'), (err) ->
+				return cb err if err
+				w.close cb
 
