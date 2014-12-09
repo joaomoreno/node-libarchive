@@ -11,11 +11,9 @@ using namespace node;
 typedef struct ReadData {
 	archive *archive;
 	archive_entry *entry;
-
 	Buffer *buffer;
 	size_t bufferSize;
 	char *bufferData;
-
 	Persistent<Function> onEntry;
 	Persistent<Function> onDone;
 	std::string *filename;

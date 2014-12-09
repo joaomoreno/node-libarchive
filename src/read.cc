@@ -15,7 +15,7 @@ void DoReadEntry(uv_work_t *req);
 void OnReadEntry(uv_work_t *req);
 void DoRead(uv_work_t *req);
 
-int copy(archive *archive, char* buffer, size_t size) {
+int readAll(archive *archive, char* buffer, size_t size) {
 	int r, offset = 0;
 
 	for (;;) {
@@ -32,10 +32,10 @@ int copy(archive *archive, char* buffer, size_t size) {
 }
 
 Handle<Value> BufferHandle(Buffer *buffer, size_t size) {
-		Local<Object> global = Context::GetCurrent()->Global();
-		Local<Function> ctor = Local<Function>::Cast(global->Get(String::New("Buffer")));
-		Handle<Value> args[3] = { buffer->handle_, v8::Integer::New(size), v8::Integer::New(0) };
-		return ctor->NewInstance(3, args);
+	Local<Object> global = Context::GetCurrent()->Global();
+	Local<Function> ctor = Local<Function>::Cast(global->Get(String::New("Buffer")));
+	Handle<Value> args[3] = { buffer->handle_, v8::Integer::New(size), v8::Integer::New(0) };
+	return ctor->NewInstance(3, args);
 }
 
 const char *typeName(mode_t filetype) {
@@ -49,7 +49,7 @@ const char *typeName(mode_t filetype) {
 
 void DoReadEntry(uv_work_t *req) {
 	ReadData *data = (ReadData*) req->data;
-	data->result = copy(data->archive, data->bufferData, data->bufferSize);
+	data->result = readAll(data->archive, data->bufferData, data->bufferSize);
 }
 
 void OnReadEntry(uv_work_t *req) {
@@ -155,7 +155,6 @@ Handle<Value> Read(const Arguments& args) {
 	ReadData *data = new ReadData();
 	
 	req->data = data;
-	
 	data->filename = new std::string(*String::Utf8Value(args[0]));
 	data->onEntry = Persistent<Function>::New(Local<Function>::Cast(args[1]));
 	data->onDone = Persistent<Function>::New(Local<Function>::Cast(args[2]));

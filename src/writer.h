@@ -9,6 +9,22 @@
 using namespace v8;
 using namespace node;
 
+typedef struct WriteFileData {
+	archive *archive;
+	std::string *filename;
+	mode_t permissions;
+	size_t bufferSize;
+	char *bufferData;
+	Persistent<Function> callback;
+	int result;
+} WriteFileData;
+
+typedef struct CloseData {
+	archive *archive;
+	Persistent<Function> callback;
+	int result;
+} CloseData;
+
 class Writer : ObjectWrap {
 	public:
 		static void Init(Handle<Object> exports);
