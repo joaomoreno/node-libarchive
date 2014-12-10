@@ -4,12 +4,14 @@
 #include <string>
 #include <node.h>
 #include <v8.h>
+#include <uv.h>
 #include <archive.h>
 
 using namespace v8;
 using namespace node;
 
 typedef struct WriteData {
+	uv_mutex_t *mutex;
 	archive *archive;
 	archive_entry *entry;
 	Persistent<Function> callback;
@@ -21,6 +23,7 @@ typedef struct WriteData {
 } WriteData;
 
 typedef struct CloseData {
+	uv_mutex_t *mutex;
 	archive *archive;
 	Persistent<Function> callback;
 	int result;
@@ -42,6 +45,7 @@ class Writer : ObjectWrap {
 		static Handle<Value> WriteSymlink(const Arguments& args);
 		static Handle<Value> Close(const Arguments& args);
 
+		uv_mutex_t mutex_;
 		std::string *filename_;
 		archive *archive_;
 };
