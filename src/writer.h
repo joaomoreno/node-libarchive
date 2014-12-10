@@ -12,9 +12,19 @@ using namespace node;
 typedef struct WriteData {
 	archive *archive;
 	std::string *filename;
-	mode_t permissions;
 	Persistent<Function> callback;
 	int result;
+
+	// opts
+	mode_t permissions;
+	bool atimeIsSet;
+	time_t atime;
+	bool birthtimeIsSet;
+	time_t birthtime;
+	bool ctimeIsSet;
+	time_t ctime;
+	bool mtimeIsSet;
+	time_t mtime;
 
 	// files
 	size_t bufferSize;

@@ -65,8 +65,27 @@ void OnReadEntry(uv_work_t *req) {
 
 	Local<Object> result = Object::New();
 	result->Set(String::New("path"), String::New(archive_entry_pathname(data->entry)));
-	result->Set(String::New("permissions"), Number::New(archive_entry_perm(data->entry)));
 	result->Set(String::New("type"), String::New(typeName(filetype)));
+
+	Local<Object> stat = Object::New();
+	result->Set(String::New("stat"), stat);
+	stat->Set(String::New("permissions"), Number::New(archive_entry_perm(data->entry)));
+
+	if (archive_entry_atime_is_set(data->entry)) {
+		stat->Set(String::New("atime"), Number::New(archive_entry_atime(data->entry)));
+	}
+
+	if (archive_entry_birthtime_is_set(data->entry)) {
+		stat->Set(String::New("birthtime"), Number::New(archive_entry_birthtime(data->entry)));
+	}
+
+	if (archive_entry_ctime_is_set(data->entry)) {
+		stat->Set(String::New("ctime"), Number::New(archive_entry_ctime(data->entry)));
+	}
+
+	if (archive_entry_mtime_is_set(data->entry)) {
+		stat->Set(String::New("mtime"), Number::New(archive_entry_mtime(data->entry)));
+	}
 
 	if (filetype == AE_IFDIR) {
 

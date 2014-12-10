@@ -108,7 +108,7 @@ void DoWriteFile(uv_work_t *req) {
   archive_entry_free(entry);
 }
 
-// (filename, permissions, buffer, cb)
+// (filename, buffer, stat, cb)
 Handle<Value> Writer::WriteFile(const Arguments& args) {
 	HandleScope scope;
 	
@@ -117,7 +117,7 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 		return scope.Close(Undefined());
 	}
 	
-	if (!args[0]->IsString() || !args[1]->IsNumber() || !Buffer::HasInstance(args[2]) || !args[3]->IsFunction()) {
+	if (!args[0]->IsString() || !Buffer::HasInstance(args[1]) || !args[2]->IsObject() || !args[3]->IsFunction()) {
 		ThrowException(Exception::TypeError(String::New("Wrong arguments")));
 		return scope.Close(Undefined());
 	}
@@ -130,9 +130,12 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 
 	data->archive = me->archive_;
 	data->filename = new std::string(*String::Utf8Value(args[0]));
-	data->permissions = args[1]->NumberValue();
-	data->bufferSize = Buffer::Length(args[2]);
-	data->bufferData = Buffer::Data(args[2]);
+	data->bufferSize = Buffer::Length(args[1]);
+	data->bufferData = Buffer::Data(args[1]);
+
+	// TODO
+	// data->permissions = args[2]->NumberValue();
+
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	
@@ -157,7 +160,7 @@ void DoWriteDirectory(uv_work_t *req) {
   archive_entry_free(entry);
 }
 
-// (filename, permissions, cb)
+// (filename, stat, cb)
 Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 	HandleScope scope;
 	
@@ -166,12 +169,14 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 		return scope.Close(Undefined());
 	}
 	
-	if (!args[0]->IsString() || !args[1]->IsNumber() || !args[2]->IsFunction()) {
+	if (!args[0]->IsString() || !args[1]->IsObject() || !args[2]->IsFunction()) {
 		ThrowException(Exception::TypeError(String::New("Wrong arguments")));
 		return scope.Close(Undefined());
 	}
-	
+
 	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
+	Local<Object> stat = args[2]->ToObject();
+
 	uv_work_t *req = new uv_work_t();
 	WriteData *data = new WriteData();
 	
@@ -179,7 +184,34 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 
 	data->archive = me->archive_;
 	data->filename = new std::string(*String::Utf8Value(args[0]));
-	data->permissions = args[1]->NumberValue();
+
+	Local<Value> permissions = stat->Get(String::New("permissions"));
+	data->permissions = permissions->IsUndefined() ? 0755 : stat->NumberValue();
+
+	Local<Value> atime = stat->Get(String::New("atime"));
+	if (!atime->IsUndefined()) {
+		data->atimeIsSet = true;
+		data->atime = atime->NumberValue();
+	}
+
+	Local<Value> birthtime = stat->Get(String::New("birthtime"));
+	if (!birthtime->IsUndefined()) {
+		data->birthtimeIsSet = true;
+		data->birthtime = birthtime->NumberValue();
+	}
+
+	Local<Value> ctime = stat->Get(String::New("ctime"));
+	if (!ctime->IsUndefined()) {
+		data->ctimeIsSet = true;
+		data->ctime = ctime->NumberValue();
+	}
+
+	Local<Value> mtime = stat->Get(String::New("mtime"));
+	if (!mtime->IsUndefined()) {
+		data->mtimeIsSet = true;
+		data->mtime = mtime->NumberValue();
+	}
+
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
 	data->result = ARCHIVE_OK;
 	
@@ -205,7 +237,7 @@ void DoWriteSymlink(uv_work_t *req) {
   archive_entry_free(entry);
 }
 
-// (filename, permissions, symlink, cb)
+// (filename, symlink, stat, cb)
 Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 	HandleScope scope;
 	
@@ -214,7 +246,7 @@ Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 		return scope.Close(Undefined());
 	}
 	
-	if (!args[0]->IsString() || !args[1]->IsNumber() || !args[2]->IsString() || !args[3]->IsFunction()) {
+	if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsObject() || !args[3]->IsFunction()) {
 		ThrowException(Exception::TypeError(String::New("Wrong arguments")));
 		return scope.Close(Undefined());
 	}
@@ -227,8 +259,11 @@ Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 
 	data->archive = me->archive_;
 	data->filename = new std::string(*String::Utf8Value(args[0]));
-	data->permissions = args[1]->NumberValue();
-	data->symlink = new std::string(*String::Utf8Value(args[2]));
+	data->symlink = new std::string(*String::Utf8Value(args[1]));
+
+	// TODO
+	// data->permissions = args[2]->NumberValue();
+
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	

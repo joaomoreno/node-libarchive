@@ -29,22 +29,25 @@ describe 'archive', ->
 				switch entry.type
 					when 'file'
 						assert entry.path
-						assert entry.permissions
 						assert entry.type
 						assert entry.data
 						assert !entry.symlink
+						assert entry.stat
+						assert entry.stat.permissions
 					when 'directory'
 						assert entry.path
-						assert entry.permissions
 						assert entry.type
 						assert !entry.data
 						assert !entry.symlink
+						assert entry.stat
+						assert entry.stat.permissions
 					when 'symlink'
 						assert entry.path
-						assert entry.permissions
 						assert entry.type
 						assert !entry.data
 						assert entry.symlink
+						assert entry.stat
+						assert entry.stat.permissions
 			cb
 
 	it 'should fail when opening a non existing archive', (cb) ->
@@ -58,8 +61,8 @@ describe 'archive', ->
 	it 'should be able to write an archive', (cb) ->
 		w = new _.Writer temp.openSync('node-libarchive-tests').path
 		async.series [
-			w.writeDirectory.bind w, 'folder', 493
-			w.writeFile.bind w, 'folder/hello.txt', 436, new Buffer('hello there\n', 'utf8')
-			w.writeSymlink.bind w, 'link.txt', 436, 'folder/hello.txt'
+			w.writeDirectory.bind w, 'folder', { permissions: 493 }
+			w.writeFile.bind w, 'folder/hello.txt', new Buffer('hello there\n', 'utf8'), { permissions: 436 }
+			w.writeSymlink.bind w, 'link.txt', 'folder/hello.txt', { permissions: 436 }
 			w.close.bind w
 		], cb
