@@ -8,60 +8,28 @@
 using namespace v8;
 using namespace node;
 
-void SetStat(WriteData *data, Local<Object> stat, int defaultPermissions) {
+void SetStat(archive_entry *entry, Local<Object> stat, int defaultPermissions) {
 	Local<Value> permissions = stat->Get(String::New("permissions"));
-	data->permissions = permissions->IsUndefined() ? defaultPermissions : permissions->NumberValue();
+	archive_entry_set_perm(entry, permissions->IsUndefined() ? defaultPermissions : permissions->NumberValue());
 
 	Local<Value> atime = stat->Get(String::New("atime"));
 	if (!atime->IsUndefined()) {
-		data->atimeIsSet = true;
-		data->atime = atime->NumberValue();
-	} else {
-		data->atimeIsSet = false;
+		archive_entry_set_atime(entry, atime->NumberValue(), 0);
 	}
 
 	Local<Value> birthtime = stat->Get(String::New("birthtime"));
 	if (!birthtime->IsUndefined()) {
-		data->birthtimeIsSet = true;
-		data->birthtime = birthtime->NumberValue();
-	} else {
-		data->birthtimeIsSet = false;
+		archive_entry_set_birthtime(entry, birthtime->NumberValue(), 0);
 	}
 
 	Local<Value> ctime = stat->Get(String::New("ctime"));
 	if (!ctime->IsUndefined()) {
-		data->ctimeIsSet = true;
-		data->ctime = ctime->NumberValue();
-	} else {
-		data->ctimeIsSet = false;
+		archive_entry_set_ctime(entry, ctime->NumberValue(), 0);
 	}
 
 	Local<Value> mtime = stat->Get(String::New("mtime"));
 	if (!mtime->IsUndefined()) {
-		data->mtimeIsSet = true;
-		data->mtime = mtime->NumberValue();
-	} else {
-		data->mtimeIsSet = false;
-	}
-}
-
-void SetEntryStat(archive_entry *entry, WriteData *data) {
-	archive_entry_set_perm(entry, data->permissions);
-
-	if (data->atimeIsSet) {
-		archive_entry_set_atime(entry, data->atime, 0);
-	}
-
-	if (data->birthtimeIsSet) {
-		archive_entry_set_birthtime(entry, data->birthtime, 0);
-	}
-
-	if (data->ctimeIsSet) {
-		archive_entry_set_ctime(entry, data->ctime, 0);
-	}
-
-	if (data->mtimeIsSet) {
-		archive_entry_set_mtime(entry, data->mtime, 0);
+		archive_entry_set_mtime(entry, mtime->NumberValue(), 0);
 	}
 }
 
@@ -123,7 +91,7 @@ void OnWrite(uv_work_t *req) {
 	Handle<Value> argv[] = { Null() };
 
 	if (data->result != ARCHIVE_OK) {
-		argv[0] = Exception::Error(String::Concat(String::New("Could not write to archive: "), String::New(data->filename->c_str())));
+		argv[0] = Exception::Error(String::Concat(String::New("Could not write to archive."), String::New(archive_entry_pathname(data->entry))));
 	}
 
 	TryCatch tryCatch;
@@ -133,13 +101,11 @@ void OnWrite(uv_work_t *req) {
 	}
 
 	data->archive = NULL;
+  archive_entry_free(data->entry);
+  data->entry = NULL;
+
 	data->callback.Dispose();
 
-	if (NULL != data->symlink) {
-		delete data->symlink;
-	}
-
-	delete data->filename;
 	delete data;
 	delete req;
 }
@@ -147,13 +113,7 @@ void OnWrite(uv_work_t *req) {
 void DoWriteFile(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 
-	archive_entry *entry = archive_entry_new();
-	archive_entry_set_pathname(entry, data->filename->c_str());
-	archive_entry_set_size(entry, data->bufferSize);
-	archive_entry_set_filetype(entry, AE_IFREG);
-	SetEntryStat(entry, data);
-
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
 		return;
 	}
 
@@ -162,7 +122,6 @@ void DoWriteFile(uv_work_t *req) {
 	}
 
 	data->result = ARCHIVE_OK;
-  archive_entry_free(entry);
 }
 
 // (filename, buffer, stat, cb)
@@ -180,18 +139,24 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 	}
 	
 	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
+
 	uv_work_t *req = new uv_work_t();
 	WriteData *data = new WriteData();
-	
 	req->data = data;
 
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, *String::Utf8Value(args[0]));
+	archive_entry_set_size(entry, Buffer::Length(args[1]));
+	archive_entry_set_filetype(entry, AE_IFREG);
+	SetStat(entry, args[2]->ToObject(), 0664);
+
 	data->archive = me->archive_;
-	data->filename = new std::string(*String::Utf8Value(args[0]));
-	data->bufferSize = Buffer::Length(args[1]);
-	data->bufferData = Buffer::Data(args[1]);
-	SetStat(data, args[2]->ToObject(), 0664);
+	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
+
+	data->bufferSize = Buffer::Length(args[1]);
+	data->bufferData = Buffer::Data(args[1]);
 	
 	uv_queue_work(uv_default_loop(), req, DoWriteFile, (uv_after_work_cb) OnWrite);
 	
@@ -201,17 +166,11 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 void DoWriteDirectory(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 
-	archive_entry *entry = archive_entry_new();
-	archive_entry_set_pathname(entry, data->filename->c_str());
-	archive_entry_set_filetype(entry, AE_IFDIR);
-	SetEntryStat(entry, data);
-
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
 		return;
 	}
 
 	data->result = ARCHIVE_OK;
-  archive_entry_free(entry);
 }
 
 // (filename, stat, cb)
@@ -232,12 +191,15 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 
 	uv_work_t *req = new uv_work_t();
 	WriteData *data = new WriteData();
-	
 	req->data = data;
 
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, *String::Utf8Value(args[0]));
+	archive_entry_set_filetype(entry, AE_IFDIR);
+	SetStat(entry, args[1]->ToObject(), 0755);
+
 	data->archive = me->archive_;
-	data->filename = new std::string(*String::Utf8Value(args[0]));
-	SetStat(data, args[1]->ToObject(), 0755);
+	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
 	data->result = ARCHIVE_OK;
 	
@@ -249,18 +211,11 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 void DoWriteSymlink(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 
-	archive_entry *entry = archive_entry_new();
-	archive_entry_set_pathname(entry, data->filename->c_str());
-	archive_entry_set_filetype(entry, AE_IFLNK);
-	archive_entry_set_symlink(entry, data->symlink->c_str());
-	SetEntryStat(entry, data);
-
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
 		return;
 	}
 
 	data->result = ARCHIVE_OK;
-  archive_entry_free(entry);
 }
 
 // (filename, symlink, stat, cb)
@@ -283,10 +238,14 @@ Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 	
 	req->data = data;
 
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, *String::Utf8Value(args[0]));
+	archive_entry_set_filetype(entry, AE_IFLNK);
+	archive_entry_set_symlink(entry, *String::Utf8Value(args[1]));
+	SetStat(entry, args[2]->ToObject(), 0664);
+
 	data->archive = me->archive_;
-	data->filename = new std::string(*String::Utf8Value(args[0]));
-	data->symlink = new std::string(*String::Utf8Value(args[1]));
-	SetStat(data, args[2]->ToObject(), 0664);
+	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	

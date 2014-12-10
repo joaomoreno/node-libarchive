@@ -2,7 +2,7 @@ assert = require 'assert'
 path = require 'path'
 temp = require 'temp'
 async = require 'async'
-_ = require '../build/Release/archive'
+_ = require '..'
 
 bufferEqual = (b1, b2) -> b1.length is b2.length and [b1[i] is b2[i] for i in [0..b1.length]]
 
