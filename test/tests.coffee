@@ -66,3 +66,30 @@ describe 'archive', ->
 			w.writeSymlink.bind w, 'link.txt', 'folder/hello.txt', { permissions: 436 }
 			w.close.bind w
 		], cb
+
+	it 'should be able to copy an archive', (cb) ->
+		p = temp.openSync('node-libarchive-tests').path
+		w = new _.Writer p
+		entries = []
+
+		_.read path.join(__dirname, 'fixtures', '1.zip'),
+			(entry) -> entries.push entry
+			(err) ->
+				assert !err
+				ops = []
+
+				entries.forEach (entry) ->
+					switch entry.type
+						when 'file'
+							ops.push w.writeFile.bind w, entry.path, entry.data, entry.stat
+						when 'directory'
+							ops.push w.writeDirectory.bind w, entry.path, entry.stat
+						when 'symlink'
+							ops.push w.writeSymlink.bind w, entry.path, entry.symlink, entry.stat
+
+				ops.push w.close.bind w
+
+				async.series ops, (err) ->
+					assert !err
+					console.log p
+					cb()
