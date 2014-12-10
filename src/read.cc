@@ -31,7 +31,14 @@ int readAll(archive *archive, char* buffer, size_t size) {
 	}
 }
 
-Handle<Value> BufferHandle(Buffer *buffer, size_t size) {
+Handle<Value> BufferHandle(char *data, size_t size) {
+	Buffer *buffer = Buffer::New(size);
+	char *bufferData = Buffer::Data(buffer);
+
+	for (size_t i = 0; i < size; i++) {
+		bufferData[i] = data[i];
+	}
+
 	Local<Object> global = Context::GetCurrent()->Global();
 	Local<Function> ctor = Local<Function>::Cast(global->Get(String::New("Buffer")));
 	Handle<Value> args[3] = { buffer->handle_, v8::Integer::New(size), v8::Integer::New(0) };
@@ -87,12 +94,10 @@ void OnReadEntry(uv_work_t *req) {
 		stat->Set(String::New("mtime"), Number::New(archive_entry_mtime(data->entry)));
 	}
 
-	if (filetype == AE_IFDIR) {
-
+	if (filetype == AE_IFREG) {
+		result->Set(String::New("data"), BufferHandle(data->bufferData, data->bufferSize));
 	} else if (filetype == AE_IFLNK) {
 		result->Set(String::New("symlink"), String::New(archive_entry_symlink(data->entry)));
-	} else {
-		result->Set(String::New("data"), BufferHandle(data->buffer, data->bufferSize));
 	}
 	
 	int argc = 1;
@@ -104,10 +109,8 @@ void OnReadEntry(uv_work_t *req) {
 		node::FatalException(tryCatch);
 	}
 
-	// TODO: how to dispose?
-	// data->buffer->Dispose();
-	data->buffer = NULL;
 	data->bufferSize = 0;
+	delete data->bufferData;
 	data->bufferData = NULL;
 
 	uv_queue_work(uv_default_loop(), req, DoNextHeader, (uv_after_work_cb) OnNextHeader);
@@ -125,9 +128,8 @@ void OnNextHeader(uv_work_t *req) {
 	if (data->result == ARCHIVE_OK) {
 		int size = archive_entry_size(data->entry);
 
-		data->buffer = Buffer::New(size);
 		data->bufferSize = size;
-		data->bufferData = Buffer::Data(data->buffer);
+		data->bufferData = new char[size];
 
 		uv_queue_work(uv_default_loop(), req, DoReadEntry, (uv_after_work_cb) OnReadEntry);
 		return;
