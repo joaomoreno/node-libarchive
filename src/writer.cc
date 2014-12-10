@@ -8,6 +8,35 @@
 using namespace v8;
 using namespace node;
 
+void SetStat(WriteData *data, Local<Object> stat) {
+	Local<Value> permissions = stat->Get(String::New("permissions"));
+	data->permissions = permissions->IsUndefined() ? 0755 : stat->NumberValue();
+
+	Local<Value> atime = stat->Get(String::New("atime"));
+	if (!atime->IsUndefined()) {
+		data->atimeIsSet = true;
+		data->atime = atime->NumberValue();
+	}
+
+	Local<Value> birthtime = stat->Get(String::New("birthtime"));
+	if (!birthtime->IsUndefined()) {
+		data->birthtimeIsSet = true;
+		data->birthtime = birthtime->NumberValue();
+	}
+
+	Local<Value> ctime = stat->Get(String::New("ctime"));
+	if (!ctime->IsUndefined()) {
+		data->ctimeIsSet = true;
+		data->ctime = ctime->NumberValue();
+	}
+
+	Local<Value> mtime = stat->Get(String::New("mtime"));
+	if (!mtime->IsUndefined()) {
+		data->mtimeIsSet = true;
+		data->mtime = mtime->NumberValue();
+	}
+}
+
 Persistent<Function> Writer::constructor;
 
 Writer::Writer(const char *filename) {
@@ -132,10 +161,7 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 	data->filename = new std::string(*String::Utf8Value(args[0]));
 	data->bufferSize = Buffer::Length(args[1]);
 	data->bufferData = Buffer::Data(args[1]);
-
-	// TODO
-	// data->permissions = args[2]->NumberValue();
-
+	SetStat(data, args[2]->ToObject());
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	
@@ -175,7 +201,6 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 	}
 
 	Writer *me = ObjectWrap::Unwrap<Writer>(args.This());
-	Local<Object> stat = args[2]->ToObject();
 
 	uv_work_t *req = new uv_work_t();
 	WriteData *data = new WriteData();
@@ -184,34 +209,7 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 
 	data->archive = me->archive_;
 	data->filename = new std::string(*String::Utf8Value(args[0]));
-
-	Local<Value> permissions = stat->Get(String::New("permissions"));
-	data->permissions = permissions->IsUndefined() ? 0755 : stat->NumberValue();
-
-	Local<Value> atime = stat->Get(String::New("atime"));
-	if (!atime->IsUndefined()) {
-		data->atimeIsSet = true;
-		data->atime = atime->NumberValue();
-	}
-
-	Local<Value> birthtime = stat->Get(String::New("birthtime"));
-	if (!birthtime->IsUndefined()) {
-		data->birthtimeIsSet = true;
-		data->birthtime = birthtime->NumberValue();
-	}
-
-	Local<Value> ctime = stat->Get(String::New("ctime"));
-	if (!ctime->IsUndefined()) {
-		data->ctimeIsSet = true;
-		data->ctime = ctime->NumberValue();
-	}
-
-	Local<Value> mtime = stat->Get(String::New("mtime"));
-	if (!mtime->IsUndefined()) {
-		data->mtimeIsSet = true;
-		data->mtime = mtime->NumberValue();
-	}
-
+	SetStat(data, args[2]->ToObject());
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
 	data->result = ARCHIVE_OK;
 	
@@ -260,10 +258,7 @@ Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 	data->archive = me->archive_;
 	data->filename = new std::string(*String::Utf8Value(args[0]));
 	data->symlink = new std::string(*String::Utf8Value(args[1]));
-
-	// TODO
-	// data->permissions = args[2]->NumberValue();
-
+	SetStat(data, args[2]->ToObject());
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
 	
