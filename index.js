@@ -1,1 +1,1 @@
-module.exports = require('./build/Release/archive');
+module.exports = require('bindings')('archive.node');

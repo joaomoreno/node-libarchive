@@ -2,7 +2,7 @@ var assert = require('assert');
 var path = require('path');
 var temp = require('temp');
 var async = require('async');
-var _ = require('..');
+var archive = require('..');
 
 function bufferEqual(b1, b2) {
 	if (b1.length !== b2.length) {
@@ -25,7 +25,7 @@ describe('archive', function() {
 		directories = 0;
 		symlinks = 0;
 		
-		_.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
+		archive.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
 			switch (entry.type) {
 				case 'file':
 					return files++;
@@ -44,7 +44,7 @@ describe('archive', function() {
 	});
 	
 	it('should provide the right properties', function(cb) {
-		_.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
+		archive.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
 			switch (entry.type) {
 				case 'file':
 					assert(entry.path);
@@ -72,7 +72,7 @@ describe('archive', function() {
 	});
 
 	it('should fail when opening a non existing archive', function(cb) {
-		_.read(path.join(__dirname, 'fixtures', '-1.zip'), function(entry) {
+		archive.read(path.join(__dirname, 'fixtures', '-1.zip'), function(entry) {
 			assert(false);
 		}, function(err) {
 			assert(err);
@@ -81,7 +81,7 @@ describe('archive', function() {
 	});
 
 	it('should be able to write an archive', function(cb) {
-		var w = new _.Writer(temp.openSync('node-libarchive-tests').path);
+		var w = new archive.Writer(temp.openSync('node-libarchive-tests').path);
 		async.series([
 			w.writeDirectory.bind(w, 'folder', {
 				permissions: 493
@@ -95,10 +95,10 @@ describe('archive', function() {
 
 	it('should be able to copy an archive', function(cb) {
 		var archivePath = temp.openSync('node-libarchive-tests').path;
-		var w = new _.Writer(archivePath);
+		var w = new archive.Writer(archivePath);
 		var entries = [];
 		
-		_.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
+		archive.read(path.join(__dirname, 'fixtures', '1.zip'), function(entry) {
 			entries.push(entry);
 		}, function(err) {
 			assert(!err);
@@ -124,7 +124,7 @@ describe('archive', function() {
 				
 				var entriesCopy = [];
 				
-				_.read(archivePath, function(entry) {
+				archive.read(archivePath, function(entry) {
 					entriesCopy.push(entry);
 				}, function(err) {
 					assert(!err);
