@@ -4,6 +4,8 @@ temp = require 'temp'
 async = require 'async'
 _ = require '../build/Release/archive'
 
+bufferEqual = (b1, b2) -> b1.length is b2.length and [b1[i] is b2[i] for i in [0..b1.length]]
+
 describe 'archive', ->
 	it 'should read an existing archive', (cb) ->
 		files = 0
@@ -68,8 +70,8 @@ describe 'archive', ->
 		], cb
 
 	it 'should be able to copy an archive', (cb) ->
-		p = temp.openSync('node-libarchive-tests').path
-		w = new _.Writer p
+		archivePath = temp.openSync('node-libarchive-tests').path
+		w = new _.Writer archivePath
 		entries = []
 
 		_.read path.join(__dirname, 'fixtures', '1.zip'),
@@ -91,5 +93,31 @@ describe 'archive', ->
 
 				async.series ops, (err) ->
 					assert !err
-					console.log p
-					cb()
+
+					entriesCopy = []
+					_.read archivePath,
+						(entry) -> entriesCopy.push entry
+						(err) ->
+							assert !err
+
+							# both archives must have the same number of entries
+							assert.equal entries.length, entriesCopy.length
+
+							# put them into dictionaries
+							d = {}
+							entries.forEach (e) -> d[e.path] = e
+
+							dCopy = {}
+							entriesCopy.forEach (e) -> dCopy[e.path] = e
+
+							# compare them
+							Object.keys(d).forEach (k) ->
+								assert.equal d[k].path, dCopy[k].path
+
+								if d[k].data or dCopy[k].data
+									assert bufferEqual d[k].data, dCopy[k].data
+
+								assert.equal d[k].symlink, dCopy[k].symlink
+								assert.deepEqual d[k].stat, dCopy[k].stat
+
+							cb()
