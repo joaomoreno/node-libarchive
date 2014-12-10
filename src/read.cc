@@ -79,19 +79,19 @@ void OnReadEntry(uv_work_t *req) {
 	stat->Set(String::New("permissions"), Number::New(archive_entry_perm(data->entry)));
 
 	if (archive_entry_atime_is_set(data->entry)) {
-		stat->Set(String::New("atime"), Number::New(archive_entry_atime(data->entry)));
+		stat->Set(String::New("atime"), Number::New(archive_entry_atime(data->entry) * 1000));
 	}
 
 	if (archive_entry_birthtime_is_set(data->entry)) {
-		stat->Set(String::New("birthtime"), Number::New(archive_entry_birthtime(data->entry)));
+		stat->Set(String::New("birthtime"), Number::New(archive_entry_birthtime(data->entry) * 1000));
 	}
 
 	if (archive_entry_ctime_is_set(data->entry)) {
-		stat->Set(String::New("ctime"), Number::New(archive_entry_ctime(data->entry)));
+		stat->Set(String::New("ctime"), Number::New(archive_entry_ctime(data->entry) * 1000));
 	}
 
 	if (archive_entry_mtime_is_set(data->entry)) {
-		stat->Set(String::New("mtime"), Number::New(archive_entry_mtime(data->entry)));
+		stat->Set(String::New("mtime"), Number::New(archive_entry_mtime(data->entry) * 1000));
 	}
 
 	if (filetype == AE_IFREG) {

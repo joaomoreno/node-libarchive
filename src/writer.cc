@@ -14,22 +14,22 @@ void SetStat(archive_entry *entry, Local<Object> stat, int defaultPermissions) {
 
 	Local<Value> atime = stat->Get(String::New("atime"));
 	if (!atime->IsUndefined()) {
-		archive_entry_set_atime(entry, atime->NumberValue(), 0);
+		archive_entry_set_atime(entry, atime->NumberValue() / 1000, 0);
 	}
 
 	Local<Value> birthtime = stat->Get(String::New("birthtime"));
 	if (!birthtime->IsUndefined()) {
-		archive_entry_set_birthtime(entry, birthtime->NumberValue(), 0);
+		archive_entry_set_birthtime(entry, birthtime->NumberValue() / 1000, 0);
 	}
 
 	Local<Value> ctime = stat->Get(String::New("ctime"));
 	if (!ctime->IsUndefined()) {
-		archive_entry_set_ctime(entry, ctime->NumberValue(), 0);
+		archive_entry_set_ctime(entry, ctime->NumberValue() / 1000, 0);
 	}
 
 	Local<Value> mtime = stat->Get(String::New("mtime"));
 	if (!mtime->IsUndefined()) {
-		archive_entry_set_mtime(entry, mtime->NumberValue(), 0);
+		archive_entry_set_mtime(entry, mtime->NumberValue() / 1000, 0);
 	}
 }
 
