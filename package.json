@@ -7,13 +7,12 @@
     "test": "test"
   },
   "dependencies": {
-    "async": "^0.9.0",
-    "bindings": "^1.2.1",
-    "temp": "^0.8.1",
-    "through2": "^0.6.3"
+    "bindings": "^1.2.1"
   },
   "devDependencies": {
-    "mocha": "^2.0.1"
+    "async": "^0.9.0",
+    "mocha": "^2.0.1",
+    "temp": "^0.8.1"
   },
   "scripts": {
     "test": "mocha"

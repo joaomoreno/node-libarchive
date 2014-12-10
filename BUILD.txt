@@ -1,0 +1,3 @@
+How to build libarchive:
+
+cd libarchive ; cmake . ; make archive_static
