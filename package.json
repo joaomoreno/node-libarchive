@@ -1,5 +1,5 @@
 {
-  "name": "node-libarchive",
+  "name": "libarchive",
   "version": "0.0.1",
   "description": "NodeJS bindings to libarchive",
   "main": "index.js",

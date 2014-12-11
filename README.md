@@ -1,4 +1,8 @@
-# How to build
+# Install
+
+	npm install libarchive
+
+# Build
 
 ## All platforms
 
