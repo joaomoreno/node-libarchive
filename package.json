@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "description": "NodeJS bindings to libarchive",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joaomoreno/node-libarchive.git"
+  },
   "directories": {
     "test": "test"
   },
