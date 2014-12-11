@@ -16,7 +16,7 @@ void OnReadEntry(uv_work_t *req);
 void DoRead(uv_work_t *req);
 
 int readAll(archive *archive, char* buffer, size_t size) {
-	int r, offset = 0;
+	size_t r, offset = 0;
 
 	for (;;) {
 		r = archive_read_data(archive, buffer, size - offset);
@@ -45,7 +45,7 @@ Handle<Value> BufferHandle(char *data, size_t size) {
 	return ctor->NewInstance(3, args);
 }
 
-const char *typeName(mode_t filetype) {
+const char *typeName(int filetype) {
 	switch (filetype) {
 		case AE_IFREG: return "file";
 		case AE_IFLNK: return "symlink";
@@ -68,7 +68,7 @@ void OnReadEntry(uv_work_t *req) {
 		return;
 	}
 
-	mode_t filetype = archive_entry_filetype(data->entry);
+	int filetype = archive_entry_filetype(data->entry);
 
 	Local<Object> result = Object::New();
 	result->Set(String::New("path"), String::New(archive_entry_pathname(data->entry)));

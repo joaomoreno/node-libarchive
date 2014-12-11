@@ -81,9 +81,7 @@ Handle<Value> Writer::New(const Arguments& args) {
 
 		return args.This();
 	} else {
-		const int argc = 0;
-		Local<Value> argv[argc] = { };
-		return scope.Close(constructor->NewInstance(argc, argv));
+		return scope.Close(constructor->NewInstance(0, NULL));
 	}
 }
 
