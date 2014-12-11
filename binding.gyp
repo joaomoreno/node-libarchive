@@ -8,18 +8,33 @@
 				"src/writer.cc"
 			],
 			"include_dirs": [
-				"libarchive/libarchive"
+				"deps/libarchive/libarchive"
 			],
 			"conditions": [
 				["OS == 'mac'", {
 					"libraries": [
-						"../libarchive/libarchive/libarchive.a"
+						"../deps/libarchive/libarchive/libarchive.a"
 					]
 				}],
 				["OS == 'win'", {
+					"variables": {
+						"archive_static.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\libarchive\\libarchive\\Debug\\archive_static.lib"
+					},
+					"conditions": [
+						["target_arch == 'ia32'", {
+							"variables": {
+								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\Debug\\zlib.lib"
+							}
+						}],
+						["target_arch == 'x64'", {
+							"variables": {
+								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\x64\\Debug\\zlib.lib"
+							}
+						}]
+					],
 					"link_settings": {
 						"libraries": [
-							"<(PRODUCT_DIR)\\..\\..\\libarchive\\libarchive\\Debug\\archive_static.lib;C:\\Program Files\\GnuWin32\\lib\\zlib.lib"
+							"<(archive_static.lib);<(zlib.lib)"
 						]
 					},
 					"defines": [
@@ -40,10 +55,6 @@
 			"copies": [
 				{
 					"files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
-					"destination": "<(module_path)",
-				},
-				{
-					"files": [ "C:\\Program Files\\GnuWin32\\bin\\zlib1.dll" ],
 					"destination": "<(module_path)",
 				}
 			]
