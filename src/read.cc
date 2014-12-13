@@ -16,7 +16,8 @@ void OnReadEntry(uv_work_t *req);
 void DoRead(uv_work_t *req);
 
 int readAll(archive *archive, char* buffer, size_t size) {
-	size_t r, offset = 0;
+	ssize_t r;
+	size_t offset = 0;
 
 	for (;;) {
 		r = archive_read_data(archive, buffer, size - offset);
@@ -56,7 +57,7 @@ const char *typeName(int filetype) {
 
 void DoReadEntry(uv_work_t *req) {
 	ReadData *data = (ReadData*) req->data;
-	data->result = readAll(data->archive, data->bufferData, data->bufferSize);
+	data->result = readAll(data->archive_, data->bufferData, data->bufferSize);
 }
 
 void OnReadEntry(uv_work_t *req) {
@@ -118,7 +119,7 @@ void OnReadEntry(uv_work_t *req) {
 
 void DoNextHeader(uv_work_t *req) {
 	ReadData *data = (ReadData*) req->data;
-	data->result = archive_read_next_header(data->archive, &data->entry);
+	data->result = archive_read_next_header(data->archive_, &data->entry);
 }
 
 void OnNextHeader(uv_work_t *req) {
@@ -148,8 +149,8 @@ void OnNextHeader(uv_work_t *req) {
 		node::FatalException(tryCatch);
 	}
 
-	archive_read_free(data->archive);
-	data->archive = NULL;
+	archive_read_free(data->archive_);
+	data->archive_ = NULL;
 	data->entry = NULL;
 
 	data->onEntry.Dispose();
@@ -188,18 +189,18 @@ Handle<Value> Read(const Arguments& args) {
 void DoRead(uv_work_t *req) {
 	ReadData *data = (ReadData*) req->data;
 	
-	data->archive = archive_read_new();
+	data->archive_ = archive_read_new();
 	
-	if (ARCHIVE_OK != (data->result = archive_read_support_filter_all(data->archive))) {
+	if (ARCHIVE_OK != (data->result = archive_read_support_filter_all(data->archive_))) {
 		return;
 	}
 	
-	if (ARCHIVE_OK != (data->result = archive_read_support_format_all(data->archive))) {
+	if (ARCHIVE_OK != (data->result = archive_read_support_format_all(data->archive_))) {
 		return;
 	}
 	
 	data->result = archive_read_open_filename(
-		data->archive,
+		data->archive_,
 		data->filename->c_str(),
 		10240
 	);

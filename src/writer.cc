@@ -101,7 +101,7 @@ void OnWrite(uv_work_t *req) {
 		node::FatalException(tryCatch);
 	}
 
-	data->archive = NULL;
+	data->archive_ = NULL;
   archive_entry_free(data->entry);
   data->entry = NULL;
 
@@ -115,12 +115,12 @@ void DoWriteFile(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 	uv_mutex_lock(data->mutex);
 
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive_, data->entry))) {
 		uv_mutex_unlock(data->mutex);
 		return;
 	}
 
-	if ((data->result = archive_write_data(data->archive, data->bufferData, data->bufferSize)) < 0) {
+	if ((data->result = archive_write_data(data->archive_, data->bufferData, data->bufferSize)) < 0) {
 		uv_mutex_unlock(data->mutex);
 		return;
 	}
@@ -156,7 +156,7 @@ Handle<Value> Writer::WriteFile(const Arguments& args) {
 	SetStat(entry, args[2]->ToObject(), 0664);
 
 	data->mutex = &me->mutex_;
-	data->archive = me->archive_;
+	data->archive_ = me->archive_;
 	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
@@ -173,7 +173,7 @@ void DoWriteDirectory(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 	uv_mutex_lock(data->mutex);
 
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive_, data->entry))) {
 		uv_mutex_unlock(data->mutex);
 		return;
 	}
@@ -208,7 +208,7 @@ Handle<Value> Writer::WriteDirectory(const Arguments& args) {
 	SetStat(entry, args[1]->ToObject(), 0755);
 
 	data->mutex = &me->mutex_;
-	data->archive = me->archive_;
+	data->archive_ = me->archive_;
 	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
 	data->result = ARCHIVE_OK;
@@ -222,7 +222,7 @@ void DoWriteSymlink(uv_work_t *req) {
 	WriteData *data = (WriteData*) req->data;
 	uv_mutex_lock(data->mutex);
 
-	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive, data->entry))) {
+	if (ARCHIVE_OK != (data->result = archive_write_header(data->archive_, data->entry))) {
 		uv_mutex_unlock(data->mutex);
 		return;
 	}
@@ -258,7 +258,7 @@ Handle<Value> Writer::WriteSymlink(const Arguments& args) {
 	SetStat(entry, args[2]->ToObject(), 0664);
 
 	data->mutex = &me->mutex_;
-	data->archive = me->archive_;
+	data->archive_ = me->archive_;
 	data->entry = entry;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
 	data->result = ARCHIVE_OK;
@@ -272,7 +272,7 @@ void DoClose(uv_work_t *req) {
 	CloseData *data = (CloseData*) req->data;
 
 	uv_mutex_lock(data->mutex);
-  data->result = archive_write_close(data->archive);
+  data->result = archive_write_close(data->archive_);
 	uv_mutex_unlock(data->mutex);
 }
 
@@ -292,7 +292,7 @@ void OnClose(uv_work_t *req) {
 		node::FatalException(tryCatch);
 	}
 
-	data->archive = NULL;
+	data->archive_ = NULL;
 	data->callback.Dispose();
 	delete data;
 	delete req;
@@ -318,7 +318,7 @@ Handle<Value> Writer::Close(const Arguments& args) {
 	req->data = data;
 
 	data->mutex = &me->mutex_;
-	data->archive = me->archive_;
+	data->archive_ = me->archive_;
 	data->callback = Persistent<Function>::New(Local<Function>::Cast(args[0]));
 	data->result = ARCHIVE_OK;
 	

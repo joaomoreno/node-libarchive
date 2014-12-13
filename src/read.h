@@ -9,7 +9,7 @@ using namespace v8;
 using namespace node;
 
 typedef struct ReadData {
-	archive *archive;
+	archive *archive_;
 	archive_entry *entry;
 	size_t bufferSize;
 	char *bufferData;

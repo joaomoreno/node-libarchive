@@ -12,7 +12,7 @@ using namespace node;
 
 typedef struct WriteData {
 	uv_mutex_t *mutex;
-	archive *archive;
+	archive *archive_;
 	archive_entry *entry;
 	Persistent<Function> callback;
 	int result;
@@ -24,7 +24,7 @@ typedef struct WriteData {
 
 typedef struct CloseData {
 	uv_mutex_t *mutex;
-	archive *archive;
+	archive *archive_;
 	Persistent<Function> callback;
 	int result;
 } CloseData;

@@ -6,7 +6,7 @@
 
 ## All platforms
 
-	git submodule init --update
+	git submodule update --init
 	npm install
 
 ## OS X
