@@ -11,7 +11,19 @@
 
 ## OS X
 
-	cd deps/libarchive ; cmake . ; make archive_static
+	cd deps/libarchive
+	cmake .
+	make archive_static
+	cd ../..
+	./node_modules/.bin/node-pre-gyp rebuild
+
+## Linux
+
+	cd deps/libarchive
+	cmake .
+	# edit `deps/libarchive/libarchive/CMakeFiles/archive_static.dir/flags.make` and add `-fPIC` to CFLAGS
+	make archive_static
+	cd ../..
 	./node_modules/.bin/node-pre-gyp rebuild
 
 ## Windows (x64)

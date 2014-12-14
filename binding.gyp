@@ -11,11 +11,6 @@
 				"deps/libarchive/libarchive"
 			],
 			"conditions": [
-				["OS == 'mac'", {
-					"libraries": [
-						"../deps/libarchive/libarchive/libarchive.a"
-					]
-				}],
 				["OS == 'win'", {
 					"variables": {
 						"archive_static.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\libarchive\\libarchive\\Debug\\archive_static.lib"
@@ -45,6 +40,10 @@
 							"IgnoreDefaultLibraryNames": ["libcmt"]
 						}
 					}
+				}, {
+					"libraries": [
+						"../deps/libarchive/libarchive/libarchive.a"
+					]
 				}]
 			]
 		},
