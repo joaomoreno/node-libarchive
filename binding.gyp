@@ -13,17 +13,17 @@
 			"conditions": [
 				["OS == 'win'", {
 					"variables": {
-						"archive_static.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\libarchive\\libarchive\\Debug\\archive_static.lib"
+						"archive_static.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\libarchive\\libarchive\\Release\\archive_static.lib"
 					},
 					"conditions": [
 						["target_arch == 'ia32'", {
 							"variables": {
-								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\Debug\\zlib.lib"
+								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\Release\\zlib.lib"
 							}
 						}],
 						["target_arch == 'x64'", {
 							"variables": {
-								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\x64\\Debug\\zlib.lib"
+								"zlib.lib": "<(PRODUCT_DIR)\\..\\..\\deps\\zlib-win64\\x64\\Release\\zlib.lib"
 							}
 						}]
 					],
@@ -36,6 +36,9 @@
 						"LIBARCHIVE_STATIC"
 					],
 					"msvs_settings": {
+						"VCCLCompilerTool": {
+							"RuntimeLibrary": 0
+						},
 						"VCLinkerTool": {
 							"IgnoreDefaultLibraryNames": ["libcmt"]
 						}
