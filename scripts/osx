@@ -1,0 +1,11 @@
+#!/bin/sh
+
+pushd deps/libarchive
+git clean -xfd .
+cmake .
+make archive_static
+
+popd
+./node_modules/.bin/node-pre-gyp rebuild
+./node_modules/.bin/node-pre-gyp package
+./node_modules/.bin/node-pre-gyp publish
