@@ -1,0 +1,12 @@
+#!/bin/bash
+
+pushd deps/libarchive
+git clean -xfd .
+cmake .
+sed -i "s/\(^C_FLAGS.*$\)/\1-fPIC/" libarchive/CMakeFiles/archive_static.dir/flags.make
+make archive_static
+
+popd
+./node_modules/.bin/node-pre-gyp rebuild
+./node_modules/.bin/node-pre-gyp package
+./node_modules/.bin/node-pre-gyp publish
