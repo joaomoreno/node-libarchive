@@ -35,6 +35,6 @@
     "libarchive"
   ],
   "author": "João Moreno",
-  "license": "ISC",
+  "license": "MIT",
   "gypfile": true
 }
