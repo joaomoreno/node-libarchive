@@ -1,3 +1,9 @@
+# Disclaimer
+
+**This project's development has stopped.**
+
+**For a good (un)zip library alternative, I suggest [yazl](https://github.com/thejoshwolfe/yazl)/[yauzl](https://github.com/thejoshwolfe/yauzl).**
+
 # Install
 
 	npm install libarchive
